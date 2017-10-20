@@ -1,3 +1,5 @@
 host {
     hostname = %HOSTNAME% 
+    ip = %IP%
+    hostgroup = %HOSTGROUP%
 }
