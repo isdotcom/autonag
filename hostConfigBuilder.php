@@ -54,7 +54,7 @@ class HostConfigBuilder {
 	public function writeConfig() {
 		echo $this->mergedTemplate;
 		file_put_contents("{$this->hostConfigDir}/{$this->name}.cfg", $this->mergedTemplate);
-		file_put_contents("{$this->hostTrackDir}/{$this->type}.inf", "{$this->name}:{$this->instanceId}", FILE_APPEND);
+		file_put_contents("{$this->hostTrackDir}/{$this->type}.inf", "{$this->name}:{$this->instanceId}" . PHP_EOL, FILE_APPEND);
 	}
 
 	// Let Nagios know there's a new config
