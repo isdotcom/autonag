@@ -4,9 +4,9 @@ class HostConfigBuilder {
 	private $required = array('name', 'ip', 'type', 'version', 'instanceId');
 
 	// Paths
-	public $templateURL = 'https://raw.githubusercontent.com/isdotcom/nagios-auto/master/templates/%VERSION%/ecs-pod/nagios-host.template';
-	public $hostConfigDir = '/etc/nagios3/conf.d/hosts';
-	public $hostTrackDir = '/etc/nagios3';
+	public $templateURL = 'https://raw.githubusercontent.com/isdotcom/nagios-auto/master/templates/%VERSION%/%TYPE%/nagios-host.template';
+	public $hostConfigDir = '/etc/nagios3/dynamic_hosts';
+	public $hostTrackDir = '/etc/nagios3/dynamic_hosts';
 
 	public function __construct() {
 		// Make sure we have the required arguments (can come from _GET, _POST, or sometimes _COOKIES)
@@ -31,8 +31,8 @@ class HostConfigBuilder {
 	}
 
 	// Pull the template from templateURL (github?) if we can
-	public function downloadTemplate() {
-		$merge = array('%VERSION%' => $this->version);
+	private function downloadTemplate() {
+		$merge = array('%VERSION%' => $this->version, '%TYPE%' => $this->type);
 		$templateURL = strtr($this->templateURL, $merge);
 		$result = @file_get_contents($templateURL);
 		if ($result != false) {
@@ -61,10 +61,16 @@ class HostConfigBuilder {
 	public function reloadNagios() {
 		exec('service nagios3 reload');
 	}
+	
+	// Let users know a new host was added
+	public function notifyHostAdded() {
+		
+	}
 }
 
 $hostConfig = new HostConfigBuilder();
 $hostConfig->mergeTemplate();
 $hostConfig->writeConfig();
 $hostConfig->reloadNagios();
+$hostConfig->notifyHostAdded();
 ?>
