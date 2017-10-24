@@ -4,7 +4,7 @@ class HostConfigBuilder {
 	private $required = array('name', 'ip', 'type', 'version', 'instanceId');
 
 	// Paths
-	public $templateURL = 'https://raw.githubusercontent.com/isdotcom/nagios-auto/master/templates/%VERSION%/%TYPE%/nagios-host.template';
+	public $templateURL = 'https://raw.githubusercontent.com/isdotcom/autonag/master/templates/%VERSION%/%TYPE%/nagios-host.template';
 	public $hostConfigDir = '/etc/nagios3/dynamic_hosts';
 	public $hostTrackDir = '/etc/nagios3/dynamic_hosts';
 
