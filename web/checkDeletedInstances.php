@@ -5,6 +5,7 @@ class ec2Tracker {
     private $params = array();
     private $trackInstances = array();
     private $foundInstances = array();
+    private $nagiosNeedsReload = false;
 
     public function __construct($type) {
         require('aws-sdk/aws-autoloader.php');
@@ -67,6 +68,7 @@ EOM;
         rename("{$this->settings['paths']['hostConfigDir']}/{$name}.cfg", "{$this->settings['paths']['hostConfigDir']}/{$name}.cfg.old");
         exec("sed -i.bak '/{$instanceId}/d' {$this->settings['paths']['hostTrackDir']}/{$this->params['type']}.inf");
         $this->logChange($name, $instanceId);
+        $this->nagiosNeedsReload = true;
     }
 
     public function findDeletedInstances() {
@@ -77,9 +79,16 @@ EOM;
             }
         }
     }
+
+    public function reloadNagios() {
+        if ($this->nagiosNeedsReload) {
+            exec('service nagios3 reload');
+        }
+    }
 }
 
 $tracker = new ec2Tracker('ecs-pod');
 $tracker->getAllInstances('us-west-2');
 $tracker->findDeletedInstances();
+$tracker->reloadNagios();
 ?>
