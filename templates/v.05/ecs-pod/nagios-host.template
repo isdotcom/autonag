@@ -1,7 +1,7 @@
 define host {
-    use				generic-host
-    host_name		%HOSTNAME% 
-    address			%IP%
-    hostgroups		%HOSTGROUP%
-    notes           %NOTE%
+    use		generic-host
+    host_name	%HOSTNAME% 
+    address	%IP%
+    hostgroups	%HOSTGROUP%
+    notes	%NOTE%
 }
