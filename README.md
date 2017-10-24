@@ -1,2 +1,2 @@
-# nagios-auto
-Resources for automating Nagios host add
+# autonag
+Resources for automating Nagios host add and delete
