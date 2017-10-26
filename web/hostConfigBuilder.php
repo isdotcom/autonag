@@ -71,8 +71,14 @@ EOM;
     // Write the config to hostConfigDir
     // Save the name:instanceId pair in hostTrackDir so we can track this later
     public function writeConfig() {
-        $mergedTemplate = $this->mergeTemplate();
+	if (!file_exists($this->settings['paths']['hostConfigDir'])) {
+            mkdir($this->settings['paths']['hostConfigDir'], 0755, true);
+        }
         file_put_contents("{$this->settings['paths']['hostConfigDir']}/{$this->params['name']}.cfg", $mergedTemplate);
+        if (!file_exists($this->settings['paths']['hostTrackDir'])) {
+            mkdir($this->settings['paths']['hostTrackDir'], 0755, true);
+        }
+        $mergedTemplate = $this->mergeTemplate();
         file_put_contents("{$this->settings['paths']['hostTrackDir']}/{$this->params['type']}.inf", "{$this->params['name']}:{$this->params['instanceId']}" . PHP_EOL, FILE_APPEND);
         $this->logChange();
     }
