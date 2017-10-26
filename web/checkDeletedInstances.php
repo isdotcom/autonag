@@ -43,7 +43,7 @@ class ec2Tracker {
     public function getAllInstances($region) {
         $client = $this->createClient($region);
         $result = $client->describeInstanceStatus([
-            'IncludeAllInstances' => true
+//            'IncludeAllInstances' => true
         ]);
         $instances = $result['InstanceStatuses'];
         foreach ($instances as $instance) {
@@ -65,8 +65,12 @@ EOM;
     }
 
     private function unmonitorInstance($name, $instanceId) {
-        rename("{$this->settings['paths']['hostConfigDir']}/{$name}.cfg", "{$this->settings['paths']['hostConfigDir']}/{$name}.cfg.old");
-        exec("sed -i.bak '/{$instanceId}/d' {$this->settings['paths']['hostTrackDir']}/{$this->params['type']}.inf");
+        if (file_exists("{$this->settings['paths']['hostConfigDir']}/{$name}.cfg")) {
+	    rename("{$this->settings['paths']['hostConfigDir']}/{$name}.cfg", "{$this->settings['paths']['hostConfigDir']}/{$name}.cfg.old");
+        }
+        if (file_exists("{$this->settings['paths']['hostTrackDir']}/{$this->params['type']}.inf")) {
+            exec("sed -i.bak '/{$instanceId}/d' {$this->settings['paths']['hostTrackDir']}/{$this->params['type']}.inf");
+        }
         $this->logChange($name, $instanceId);
         $this->nagiosNeedsReload = true;
     }
