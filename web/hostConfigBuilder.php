@@ -6,28 +6,28 @@ class hostConfigBuilder {
     public function __construct() {
         $this->settings = parse_ini_file('settings.ini', true);
         if (!file_exists($this->settings['paths']['hostConfigDir'])) {
-            if (!is_writable(dirname($this->settings['paths']['hostConfigDir']))) {
-                $this->badRequest(array('error' => 'Not writable', 'path' => dirname($this->settings['paths']['hostConfigDir'])));
-            } else {
+            if (is_writable(dirname($this->settings['paths']['hostConfigDir']))) {
                 mkdir($this->settings['paths']['hostConfigDir'], 0755, true);
+            } else {
+                $this->badRequest(array('error' => 'Not writable', 'path' => dirname($this->settings['paths']['hostConfigDir'])));
             }
         } elseif (!is_writable($this->settings['paths']['hostConfigDir'])) {
             $this->badRequest(array('error' => 'Not writable', 'path' => $this->settings['paths']['hostConfigDir']));
         }
         if (!file_exists($this->settings['paths']['hostTrackDir'])) {
-            if (!is_writable(dirname($this->settings['paths']['hostTrackDir']))) {
-                $this->badRequest(array('error' => 'Not writable', 'path' => dirname($this->settings['paths']['hostTrackDir'])));
-            } else {
+            if (is_writable(dirname($this->settings['paths']['hostTrackDir']))) {
                 mkdir($this->settings['paths']['hostTrackDir'], 0755, true);
+            } else {
+                $this->badRequest(array('error' => 'Not writable', 'path' => dirname($this->settings['paths']['hostTrackDir'])));
             }
         } elseif (!is_writable($this->settings['paths']['hostTrackDir'])) {
             $this->badRequest(array('error' => 'Not writable', 'path' => $this->settings['paths']['hostTrackDir']));
         }
         if (!file_exists($this->settings['logs']['change'])) {
-            if (!is_writable(dirname($this->settings['logs']['change']))) {
-                $this->badRequest(array('error' => 'Not writable', 'path' => dirname($this->settings['logs']['change'])));
-            } else {
+            if (is_writable(dirname($this->settings['logs']['change']))) {
                 touch($this->settings['logs']['change']);
+            } else {
+                $this->badRequest(array('error' => 'Not writable', 'path' => dirname($this->settings['logs']['change'])));
             }
         } elseif (!is_writable($this->settings['logs']['change'])) {
             $this->badRequest(array('error' => 'Not writable', 'path' => $this->settings['logs']['change']));

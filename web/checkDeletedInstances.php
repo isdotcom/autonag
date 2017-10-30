@@ -7,21 +7,42 @@ class ec2Tracker {
     private $foundInstances = array();
     private $nagiosNeedsReload = false;
 
-    public function __construct($type) {
+    public function __construct() {
         require('aws-sdk/aws-autoloader.php');
         $this->settings = parse_ini_file('settings.ini', true);
-        if (!is_writable($this->settings['paths']['hostConfigDir'])) {
-            echo "{$this->settings['paths']['hostConfigDir']} is not writable." . PHP_EOL;
+        if (empty($this->settings['aws']['region'])) {
+            echo "'region' is blank in settings.ini - please fix" . PHP_EOL;
             exit(1);
-        } elseif (!is_writable($this->settings['paths']['hostTrackDir'])) {
-            echo "{$this->settings['paths']['hostTrackDir']} is not writable." . PHP_EOL;
-            exit(1);
-        } elseif (!is_writable($this->settings['logs']['change'])) {
-            echo "{$this->settings['logs']['change']} is not writable." . PHP_EOL;
+        } elseif (empty($this->settings['aws']['hostType'])) {
+            echo "'hostType' is blank in settings.ini - please fix" . PHP_EOL;
             exit(1);
         }
-        $this->params['type'] = $type;
-        $this->trackInstances = file("{$this->settings['paths']['hostTrackDir']}/{$this->params['type']}.inf", FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        if (!file_exists($this->settings['paths']['hostConfigDir'])) {
+            echo "{$this->settings['paths']['hostConfigDir']} doesn't exist - nothing to do" . PHP_EOL;
+            exit(0);
+        }
+        if (file_exists("{$this->settings['paths']['hostTrackDir']}/{$this->settings['aws']['hostType']}.inf")) {
+            if (is_writable("{$this->settings['paths']['hostTrackDir']}/{$this->settings['aws']['hostType']}.inf")) {
+                $this->trackInstances = file("{$this->settings['paths']['hostTrackDir']}/{$this->settings['aws']['hostType']}.inf", FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            } else {
+                echo "{$this->settings['paths']['hostTrackDir']}/{$this->settings['aws']['hostType']}.inf isn't writable - please fix" . PHP_EOL;
+                exit(1);
+            }
+        } else {
+            echo "{$this->settings['paths']['hostTrackDir']}/{$this->settings['aws']['hostType']}.inf doesn't exist - nothing to do" . PHP_EOL;
+            exit(0);
+        }
+        if (!file_exists($this->settings['logs']['change'])) {
+            if (is_writable(dirname($this->settings['logs']['change']))) {
+                touch($this->settings['logs']['change']);
+            } else {
+                echo dirname($this->settings['logs']['change']) . " isn't writable - please fix" . PHP_EOL;
+                exit(1);
+            }
+        } elseif (!is_writable($this->settings['logs']['change'])) {
+                echo "{$this->settings['logs']['change']} isn't writable - please fix" . PHP_EOL;
+                exit(1);
+        }
     }
 
     private function getCredentials() {
@@ -30,18 +51,18 @@ class ec2Tracker {
         return $credentials;
     }
 
-    private function createClient($region) {
+    private function createClient() {
 	$credentials = $this->getCredentials();
         $client = new Aws\Ec2\Ec2Client([
-            'region' => $region,
+            'region' => $this->settings['aws']['region'],
             'credentials' => $credentials,
             'version' => 'latest'
         ]);
         return $client;
     }
 
-    public function getAllInstances($region) {
-        $client = $this->createClient($region);
+    public function getAllInstances() {
+        $client = $this->createClient();
         $result = $client->describeInstanceStatus([
 //            'IncludeAllInstances' => true
         ]);
@@ -68,8 +89,8 @@ EOM;
         if (file_exists("{$this->settings['paths']['hostConfigDir']}/{$name}.cfg")) {
 	    rename("{$this->settings['paths']['hostConfigDir']}/{$name}.cfg", "{$this->settings['paths']['hostConfigDir']}/{$name}.cfg.old");
         }
-        if (file_exists("{$this->settings['paths']['hostTrackDir']}/{$this->params['type']}.inf")) {
-            exec("sed -i.bak '/{$instanceId}/d' {$this->settings['paths']['hostTrackDir']}/{$this->params['type']}.inf");
+        if (file_exists("{$this->settings['paths']['hostTrackDir']}/{$this->settings['aws']['hostType']}.inf")) {
+            exec("sed -i.bak '/{$instanceId}/d' {$this->settings['paths']['hostTrackDir']}/{$this->settings['aws']['hostType']}.inf");
         }
         $this->logChange($name, $instanceId);
         $this->nagiosNeedsReload = true;
@@ -91,8 +112,8 @@ EOM;
     }
 }
 
-$tracker = new ec2Tracker('ecs-pod');
-$tracker->getAllInstances('us-west-2');
+$tracker = new ec2Tracker();
+$tracker->getAllInstances();
 $tracker->findDeletedInstances();
 $tracker->reloadNagios();
 ?>
