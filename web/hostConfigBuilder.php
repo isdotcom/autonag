@@ -5,10 +5,30 @@ class hostConfigBuilder {
 
     public function __construct() {
         $this->settings = parse_ini_file('settings.ini', true);
-        if (!is_writable($this->settings['paths']['hostConfigDir'])) {
+        if (!file_exists($this->settings['paths']['hostConfigDir'])) {
+            if (!is_writable(dirname($this->settings['paths']['hostConfigDir']))) {
+                $this->badRequest(array('error' => 'Not writable', 'path' => dirname($this->settings['paths']['hostConfigDir'])));
+            } else {
+                mkdir($this->settings['paths']['hostConfigDir'], 0755, true);
+            }
+        } elseif (!is_writable($this->settings['paths']['hostConfigDir'])) {
             $this->badRequest(array('error' => 'Not writable', 'path' => $this->settings['paths']['hostConfigDir']));
+        }
+        if (!file_exists($this->settings['paths']['hostTrackDir'])) {
+            if (!is_writable(dirname($this->settings['paths']['hostTrackDir']))) {
+                $this->badRequest(array('error' => 'Not writable', 'path' => dirname($this->settings['paths']['hostTrackDir'])));
+            } else {
+                mkdir($this->settings['paths']['hostTrackDir'], 0755, true);
+            }
         } elseif (!is_writable($this->settings['paths']['hostTrackDir'])) {
             $this->badRequest(array('error' => 'Not writable', 'path' => $this->settings['paths']['hostTrackDir']));
+        }
+        if (!file_exists($this->settings['logs']['change'])) {
+            if (!is_writable(dirname($this->settings['logs']['change']))) {
+                $this->badRequest(array('error' => 'Not writable', 'path' => dirname($this->settings['logs']['change'])));
+            } else {
+                touch($this->settings['logs']['change']);
+            }
         } elseif (!is_writable($this->settings['logs']['change'])) {
             $this->badRequest(array('error' => 'Not writable', 'path' => $this->settings['logs']['change']));
         }
@@ -71,14 +91,8 @@ EOM;
     // Write the config to hostConfigDir
     // Save the name:instanceId pair in hostTrackDir so we can track this later
     public function writeConfig() {
-        if (!file_exists($this->settings['paths']['hostConfigDir'])) {
-            mkdir($this->settings['paths']['hostConfigDir'], 0755, true);
-        }
-        file_put_contents("{$this->settings['paths']['hostConfigDir']}/{$this->params['name']}.cfg", $mergedTemplate);
-        if (!file_exists($this->settings['paths']['hostTrackDir'])) {
-            mkdir($this->settings['paths']['hostTrackDir'], 0755, true);
-        }
         $mergedTemplate = $this->mergeTemplate();
+        file_put_contents("{$this->settings['paths']['hostConfigDir']}/{$this->params['name']}.cfg", $mergedTemplate);
         file_put_contents("{$this->settings['paths']['hostTrackDir']}/{$this->params['type']}.inf", "{$this->params['name']}:{$this->params['instanceId']}" . PHP_EOL, FILE_APPEND);
         $this->logChange();
     }
