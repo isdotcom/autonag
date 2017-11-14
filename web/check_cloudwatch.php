@@ -74,6 +74,25 @@ function usage() {
 	exit(3);
 }
 
+function convertUnit($unit) {
+	$units = array(
+		'Seconds' => 's', 'Microseconds' => 'μs', 'Milliseconds' => 'ms',
+		'Bytes' => 'Bytes', 'Kilobytes' => 'kB', 'Megabytes' => 'MB', 'Gigabytes' => 'GB', 'Terabytes' => 'TB',
+		'Bits' => 'Bits', 'Kilobits' => 'kb', 'Megabits' => 'Mb', 'Gigabits' => 'Gb', 'Terabits' => 'Tb',
+		'Percent' => '%', 'Count' => '',
+		'Bytes/Second' => 'Bytes/s', 'Kilobytes/Second' => 'kB/s', 'Megabytes/Second' => 'MB/s', 'Gigabytes/Second' => 'GB/s', 'Terabytes/Second' => 'TB/s',
+		'Bits/Second' => 'Bits/s', 'Kilobits/Second' => 'kb/s','Megabits/Second' => 'Mb/s', 'Gigabits/Second' => 'Gb/s', 'Terabits/Second' => 'Tb/s',
+		'Count/Second' => '/s',
+		'None' => ''
+	);
+
+	if (array_key_exists($unit, $units)) {
+		return $units[$unit];
+	} else {
+		return $unit;
+	}
+}
+
 if ($opts['profile'] && $opts['region']) {
 	$clientOpts = array('profile' => $opts['profile'], 'region' => $opts['region'], 'version' => 'latest');
 } elseif ($opts['profile']) {
@@ -107,7 +126,15 @@ if (!$opts['instance']) {
 				}
 				break;
 			case 'AWS/ELB':
-				echo 'Not implemented!' . PHP_EOL;
+				$listclient = new Aws\ElasticLoadBalancing\ElasticLoadBalancingClient($clientOpts);
+				$result = $listclient->describeLoadBalancers();
+				printf('%-40s %-16s %-80s' . PHP_EOL, 'LoadBalancerName', 'Scheme', 'DNSName');
+				foreach ($result['LoadBalancerDescriptions'] as $loadbalancer) {
+					$loadBalancerName = !empty($loadbalancer['LoadBalancerName']) ? $loadbalancer['LoadBalancerName'] : null;
+					$scheme = !empty($loadbalancer['Scheme']) ? $loadbalancer['Scheme'] : null;
+					$dnsName = !empty($loadbalancer['DNSName']) ? $loadbalancer['DNSName'] : null;
+					printf('%-40s %-16s %-80s' . PHP_EOL, $loadBalancerName, $scheme, $dnsName);
+				}
 				break;
 			case 'AWS/RDS':
 				$listclient = new Aws\Rds\RdsClient($clientOpts);
@@ -123,7 +150,8 @@ if (!$opts['instance']) {
 		}
 		exit(3);
 	} else {
-		echo 'Must specify an instanceId (-i)! Add (-C, -L, -D) and (-l) to show which ones are available.' . PHP_EOL;
+		echo 'Must specify an instanceId (-i)! . PHP_EOL;
+		echo 'Replace with (-l) and add (-C, -L, -D) to show which ones are available.' . PHP_EOL;
 		usage();
 	}
 } elseif (!$opts['namespace'] || !$opts['dimension']) {
@@ -142,7 +170,8 @@ if (!$opts['instance']) {
 		}
 		exit(3);
 	} else {
-		echo 'Must specify a metric (-m)! Add (-l) to show which ones are available.' . PHP_EOL;
+		echo 'Must specify a metric (-m)!' . PHP_EOL;
+		echo 'Replace with (-l) to show which ones are available.' . PHP_EOL;
 		usage();
 	}
 } elseif (!$opts['warning'] || !$opts['critical']) {
@@ -158,21 +187,22 @@ $result = $client->getMetricStatistics([
 	'EndTime' => time(),
 	'MetricName' => $opts['metric'],
 	'Namespace' => $opts['namespace'],
-	'Period' => 120,
+	'Period' => 300,
 	'Statistics' => $statistics,
-	'StartTime' => time() - 600
+	'StartTime' => time() - 300
 ]);
 $datapoint = $result['Datapoints'][0];
-$metric = $datapoint['Average'] * 100;
+$average = $datapoint['Average'];
+$unit = convertUnit($datapoint['Unit']);
 
-if ($metric > $opts['critical']) {
-	echo "CRITICAL: Average {$opts['metric']} is ${metric}%" . PHP_EOL;
+if ($average > $opts['critical']) {
+	echo "CRITICAL: Average {$opts['metric']} is {$average}{$unit}" . PHP_EOL;
 	exit(2);
-} elseif ($metric > $opts['warning']) {
-	echo "WARNING: Average {$opts['metric']} is ${metric}%" . PHP_EOL;
+} elseif ($average > $opts['warning']) {
+	echo "WARNING: Average {$opts['metric']} is {$average}{$unit}" . PHP_EOL;
 	exit(1);
 } else {
-	echo "OK: Average {$opts['metric']} is ${metric}%" . PHP_EOL;
+	echo "OK: Average {$opts['metric']} is {$average}{$unit}" . PHP_EOL;
 	exit(0);
 }
 ?>
