@@ -6,7 +6,7 @@ $shortOpts = 'p:r:i:CLDm:w:c:l';
 $longOpts = array('profile:', 'region:', 'instanceId:', 'ec2Metric', 'elbMetric', 'rdsMetric', 'metric:', 'warning:', 'critical:', 'list');
 $options = getopt($shortOpts, $longOpts);
 
-$required = array('profile', 'region', 'instance', 'namespace', 'dimension', 'metric', 'warning', 'critical', list);
+$required = array('profile', 'region', 'instance', 'namespace', 'dimension', 'metric', 'warning', 'critical', 'list');
 $opts = array_fill_keys($required, null);
 
 foreach ($options as $key => $value) {
@@ -148,7 +148,7 @@ if (!$opts['instance']) {
 		}
 		exit(3);
 	} else {
-		echo 'Must specify an instanceId (-i)! . PHP_EOL;
+		echo 'Must specify an instanceId (-i)!' . PHP_EOL;
 		echo 'Replace with (-l) and add (-C, -L, -D) to show which ones are available.' . PHP_EOL;
 		usage();
 	}
