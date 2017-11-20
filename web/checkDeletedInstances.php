@@ -47,12 +47,12 @@ class ec2Tracker {
 
     private function getCredentials() {
         $provider = new Aws\Credentials\CredentialProvider;
-	$credentials = $provider->defaultProvider();
+        $credentials = $provider->defaultProvider();
         return $credentials;
     }
 
     private function createClient() {
-	$credentials = $this->getCredentials();
+        $credentials = $this->getCredentials();
         $client = new Aws\Ec2\Ec2Client([
             'region' => $this->settings['aws']['region'],
             'credentials' => $credentials,
@@ -87,13 +87,12 @@ EOM;
 
     private function unmonitorInstance($name, $instanceId) {
         if (file_exists("{$this->settings['paths']['hostConfigDir']}/{$name}.cfg")) {
-	    rename("{$this->settings['paths']['hostConfigDir']}/{$name}.cfg", "{$this->settings['paths']['hostConfigDir']}/{$name}.cfg.old");
+            rename("{$this->settings['paths']['hostConfigDir']}/{$name}.cfg", "{$this->settings['paths']['hostConfigDir']}/{$name}.cfg.old");
         }
         if (file_exists("{$this->settings['paths']['hostTrackDir']}/{$this->settings['aws']['hostType']}.inf")) {
             exec("sed -i.bak '/{$instanceId}/d' {$this->settings['paths']['hostTrackDir']}/{$this->settings['aws']['hostType']}.inf");
         }
         $this->logChange($name, $instanceId);
-        $this->nagiosNeedsReload = true;
     }
 
     public function findDeletedInstances() {
@@ -101,6 +100,7 @@ EOM;
             $instance = explode(':', $trackInstance);
             if (!in_array($instance[1], $this->foundInstances)) {
                 $this->unmonitorInstance($instance[0], $instance[1]);
+                $this->nagiosNeedsReload = true;
             }
         }
     }
