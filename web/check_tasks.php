@@ -100,7 +100,7 @@ foreach ($opts['clusters'] as $cluster) {
 	$nextToken = null; 
 
 	do {
-	$resulta = $client->listTasks([
+		$resulta = $client->listTasks([
 			'cluster' => $cluster,
 			'maxResults' => 100,
 			'nextToken' => $nextToken  
