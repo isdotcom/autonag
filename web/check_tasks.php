@@ -66,10 +66,8 @@ if ($opts['profile'] && $opts['region']) {
 	usage();
 }
 
-if (!$opts['clusters']) 
-{
-	if ($opts['list']) 
-	{
+if (!$opts['clusters']) {
+	if ($opts['list']) {
 		$listClient = new Aws\Ecs\EcsClient($clientOpts);
 		$resulta = $listClient->listClusters();
 		$resultb = $listClient->describeClusters([
@@ -88,63 +86,51 @@ if (!$opts['clusters'])
 		echo 'Replace with (-l) to show which ones are available.' . PHP_EOL;
 		usage();
 	}
-} elseif (!$opts['warning'] && !$opts['critical']) 
-{
+} elseif (!$opts['warning'] && !$opts['critical']) {
 	echo 'Must specify both warning (-w), critical (-c), or both values!' . PHP_EOL;
 	usage();
 }
 
 $client = new Aws\Ecs\EcsClient($clientOpts);
 
-foreach ($opts['clusters'] as $cluster) 
-{
+foreach ($opts['clusters'] as $cluster) {
 	$status['running'][$cluster] = 0;
 
 	$status['stopped'][$cluster] = 0;
 	$nextToken = null; 
 
-do {
-$resulta = $client->listTasks(
-	[
-		'cluster' => $cluster,
-		'maxResults' => 100,
-		'nextToken' => $nextToken  
-        ]);
+	do {
+	$resulta = $client->listTasks([
+			'cluster' => $cluster,
+			'maxResults' => 100,
+			'nextToken' => $nextToken  
+        	]);
 
-	$nextToken = $resulta['nextToken'];
-	$resultb = $client->describeTasks(
-	[	
-		'cluster' => $cluster,
-		'tasks' => $resulta['taskArns']
-	]);
+		$nextToken = $resulta['nextToken'];
+		$resultb = $client->describeTasks([
+			'cluster' => $cluster,
+			'tasks' => $resulta['taskArns']
+		]);
 
-	foreach ($resultb['tasks'] as $task) 
-	{
-	
-        if ($task['desiredStatus'] == 'RUNNING' && $task['lastStatus'] == 'STOPPED') 
-        {
-			$status['stopped'][$cluster]++;
-
-		} elseif ($task['lastStatus'] == 'RUNNING')
-                  {
-			$status['running'][$cluster]++;
-	       	  }
-	}
-  } while (!is_null($nextToken));
+		foreach ($resultb['tasks'] as $task) {
+        		if ($task['desiredStatus'] == 'RUNNING' && $task['lastStatus'] == 'STOPPED') {
+				$status['stopped'][$cluster]++;
+			} elseif ($task['lastStatus'] == 'RUNNING') {
+				$status['running'][$cluster]++;
+	       	  	}
+		}
+  	} while (!is_null($nextToken));
 }
 
-foreach ($opts['clusters'] as $cluster) 
-{
+foreach ($opts['clusters'] as $cluster) {
 	$outputs[] = "{$cluster} (running: {$status['running'][$cluster]}, stopped: {$status['stopped'][$cluster]})";
 }
 
 $output = implode(', ', $outputs);
 
-if ($opts['critical'] && ((!$opts['unique'] && array_sum($status['stopped']) >= $opts['critical']) || ($opts['unique'] && max($status['stopped']) >= $opts['critical']))) 
-{	echo "CRITICAL: {$output}" . PHP_EOL;
+if ($opts['critical'] && ((!$opts['unique'] && array_sum($status['stopped']) >= $opts['critical']) || ($opts['unique'] && max($status['stopped']) >= $opts['critical']))) {	echo "CRITICAL: {$output}" . PHP_EOL;
 	exit(2);
-} elseif ($opts['warning'] && ((!$opts['unique'] && array_sum($status['stopped']) >= $opts['warning']) || ($opts['unique'] && max($status['stopped']) >= $opts['warning']))) 
-{	echo "WARNING: {$output}" . PHP_EOL;
+} elseif ($opts['warning'] && ((!$opts['unique'] && array_sum($status['stopped']) >= $opts['warning']) || ($opts['unique'] && max($status['stopped']) >= $opts['warning']))) {	echo "WARNING: {$output}" . PHP_EOL;
 	exit(1);
 } else {
 	echo "OK: {$output}" . PHP_EOL;
