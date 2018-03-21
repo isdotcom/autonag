@@ -1,5 +1,3 @@
-# /etc/nrpe/nrpe.cfg
-command[check_mongodb]=/usr/lib/monitoring-plugins/manually_installed/check_mongo
 # /usr/lib/monitoring-plugins/manually_installed/check_mongo
 #!/bin/bash
 mongoOutput=$(docker exec -it mongoshard mongo --eval "true")
