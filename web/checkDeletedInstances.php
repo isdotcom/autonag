@@ -3,6 +3,8 @@
 class ec2Tracker {
     private $settings = array();
     private $params = array();
+    private $profile = 'default';
+    private $onlyProfileInstances = false;
     private $trackInstances = array();
     private $foundInstances = array();
     private $nagiosNeedsReload = false;
@@ -43,19 +45,26 @@ class ec2Tracker {
                 echo "{$this->settings['logs']['change']} isn't writable - please fix" . PHP_EOL;
                 exit(1);
         }
-    }
 
-    private function getCredentials() {
-        $provider = new Aws\Credentials\CredentialProvider;
-        $credentials = $provider->defaultProvider();
-        return $credentials;
+        $shortOpts = 'p:';
+        $longOpts = array('profile:');
+        $options = getopt($shortOpts, $longOpts);
+
+        foreach ($options as $key => $value) {
+            switch ($key) {
+                case 'p':
+               case 'profile':
+                    $this->profile = $value;
+                    $this->onlyProfileInstances = true;
+                    break;
+            }
+        }
     }
 
     private function createClient() {
-        $credentials = $this->getCredentials();
         $client = new Aws\Ec2\Ec2Client([
+            'profile' => $this->profile,
             'region' => $this->settings['aws']['region'],
-            'credentials' => $credentials,
             'version' => 'latest'
         ]);
         return $client;
@@ -98,7 +107,9 @@ EOM;
     public function findDeletedInstances() {
         foreach ($this->trackInstances as $trackInstance) {
             $instance = explode(':', $trackInstance);
-            if (!in_array($instance[1], $this->foundInstances)) {
+            if ($this->onlyProfileInstances && strpos($instance[0], $this->profile) !== 0) {
+                continue;
+            } elseif (!in_array($instance[1], $this->foundInstances)) {
                 $this->unmonitorInstance($instance[0], $instance[1]);
                 $this->nagiosNeedsReload = true;
             }
