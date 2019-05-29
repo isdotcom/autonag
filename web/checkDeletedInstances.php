@@ -12,6 +12,25 @@ class ec2Tracker {
     public function __construct() {
         require('aws-sdk/aws-autoloader.php');
         $this->settings = parse_ini_file('settings.ini', true);
+
+        $shortOpts = 'p:t:';
+        $longOpts = array('profile:', 'type:');
+        $options = getopt($shortOpts, $longOpts);
+
+        foreach ($options as $key => $value) {
+            switch ($key) {
+                case 'p':
+                case 'profile':
+                    $this->profile = $value;
+                    $this->onlyProfileInstances = true;
+                    break;
+                case 't':
+                case 'type':
+                    $this->settings['aws']['hostType'] = $value;
+                    break;
+            }
+        }
+
         if (empty($this->settings['aws']['region'])) {
             echo "'region' is blank in settings.ini - please fix" . PHP_EOL;
             exit(1);
@@ -44,20 +63,6 @@ class ec2Tracker {
         } elseif (!is_writable($this->settings['logs']['change'])) {
                 echo "{$this->settings['logs']['change']} isn't writable - please fix" . PHP_EOL;
                 exit(1);
-        }
-
-        $shortOpts = 'p:';
-        $longOpts = array('profile:');
-        $options = getopt($shortOpts, $longOpts);
-
-        foreach ($options as $key => $value) {
-            switch ($key) {
-                case 'p':
-               case 'profile':
-                    $this->profile = $value;
-                    $this->onlyProfileInstances = true;
-                    break;
-            }
         }
     }
 
