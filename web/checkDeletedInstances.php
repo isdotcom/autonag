@@ -4,6 +4,7 @@ class ec2Tracker {
     private $settings = array();
     private $params = array();
     private $profile = 'default';
+    private $clusterName = null;
     private $onlyProfileInstances = false;
     private $trackInstances = array();
     private $foundInstances = array();
@@ -46,15 +47,19 @@ class ec2Tracker {
                 exit(1);
         }
 
-        $shortOpts = 'p:';
-        $longOpts = array('profile:');
+        $shortOpts = 'p:n:';
+        $longOpts = array('profile:', 'name:');
         $options = getopt($shortOpts, $longOpts);
 
         foreach ($options as $key => $value) {
             switch ($key) {
                 case 'p':
-               case 'profile':
+                case 'profile':
                     $this->profile = $value;
+                    break;
+                case 'n':
+                case 'name':
+                    $this->name = $value;
                     $this->onlyProfileInstances = true;
                     break;
             }
@@ -107,7 +112,7 @@ EOM;
     public function findDeletedInstances() {
         foreach ($this->trackInstances as $trackInstance) {
             $instance = explode(':', $trackInstance);
-            if ($this->onlyProfileInstances && strpos($instance[0], $this->profile) !== 0) {
+            if ($this->onlyProfileInstances && strpos($instance[0], $this->name) !== 0) {
                 continue;
             } elseif (!in_array($instance[1], $this->foundInstances)) {
                 $this->unmonitorInstance($instance[0], $instance[1]);
